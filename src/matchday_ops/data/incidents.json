@@ -1,0 +1,38 @@
+{
+  "_meta": {
+    "description": "Scheduled/known incidents with an active window in match minutes. Live crowd-driven incidents are derived separately from critical zones. Minutes are match-clock: negative = pre-match ingress, 90+ = full-time egress.",
+    "sources": ["venue_ops_manual", "green_guide"]
+  },
+  "scheduled": [
+    {
+      "id": "inc_weather",
+      "zone_key": "plaza_north",
+      "type": "weather",
+      "severity": "advisory",
+      "active_minutes": [-90, -30],
+      "summary": "Heat advisory during ingress. Hydration stations active on the North Plaza.",
+      "protocol": "Direct queuing spectators to shade and water; watch for heat distress in vulnerable spectators.",
+      "sources": ["green_guide", "fifa_sustainability"]
+    },
+    {
+      "id": "inc_welfare",
+      "zone_key": "family_area",
+      "type": "welfare",
+      "severity": "advisory",
+      "active_minutes": [20, 75],
+      "summary": "Unaccompanied minor reported near the Family Area.",
+      "protocol": "Follow safeguarding reunification protocol; escort to Family Services and log the report.",
+      "sources": ["venue_ops_manual"]
+    },
+    {
+      "id": "inc_medical",
+      "zone_key": "sec_128",
+      "type": "medical_assist",
+      "severity": "urgent",
+      "active_minutes": [30, 55],
+      "summary": "Spectator medical assistance requested in Section 128.",
+      "protocol": "Dispatch nearest first-aid team; keep a step-free path clear to Main First Aid for stretcher/wheelchair access.",
+      "sources": ["venue_ops_manual", "ada_guidance"]
+    }
+  ]
+}

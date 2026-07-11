@@ -1,0 +1,10 @@
+{
+  "_meta": {
+    "description": "Outbound transit options from the venue. base_wait applies mid-match; egress_wait applies once the full-time crowd surges. accessible flags step-free, staffed access.",
+    "source": "transit_authority"
+  },
+  "metro": {"name": "Metro (Transit Hub)", "zone": "transit_hub", "base_wait": 6, "egress_wait": 22, "accessible": true},
+  "commuter_rail": {"name": "Commuter rail (Transit Hub)", "zone": "transit_hub", "base_wait": 10, "egress_wait": 18, "accessible": true},
+  "bus": {"name": "Shuttle bus (Transit Hub)", "zone": "transit_hub", "base_wait": 8, "egress_wait": 15, "accessible": true},
+  "rideshare": {"name": "Rideshare pickup", "zone": "rideshare_zone", "base_wait": 12, "egress_wait": 35, "accessible": false}
+}

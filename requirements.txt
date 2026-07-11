@@ -1,0 +1,5 @@
+# Runtime dependency. The Anthropic SDK powers the GenAI reasoning core, but is
+# optional at run time: the assistant degrades gracefully to a deterministic,
+# grounded offline briefing when the SDK or an API key is unavailable, so the
+# test suite needs no network.
+anthropic>=0.40.0

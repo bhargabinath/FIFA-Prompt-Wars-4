@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "description": "Essential wayfinding and safety phrases for offline multilingual assistance. The Claude engine translates freely into any language; this fixed set keeps critical phrases available even with no API key.",
+    "languages": {"en": "English", "es": "Spanish", "fr": "French", "pt": "Portuguese", "ar": "Arabic", "hi": "Hindi"},
+    "source": "venue_ops_manual"
+  },
+  "exit": {"en": "Exit", "es": "Salida", "fr": "Sortie", "pt": "Saída", "ar": "مخرج", "hi": "निकास"},
+  "first_aid": {"en": "First aid", "es": "Primeros auxilios", "fr": "Premiers secours", "pt": "Primeiros socorros", "ar": "إسعافات أولية", "hi": "प्राथमिक चिकित्सा"},
+  "accessible_route": {"en": "Accessible route", "es": "Ruta accesible", "fr": "Itinéraire accessible", "pt": "Rota acessível", "ar": "مسار مُيسَّر", "hi": "सुलभ मार्ग"},
+  "help": {"en": "Help", "es": "Ayuda", "fr": "Aide", "pt": "Ajuda", "ar": "مساعدة", "hi": "मदद"},
+  "water": {"en": "Water", "es": "Agua", "fr": "Eau", "pt": "Água", "ar": "ماء", "hi": "पानी"},
+  "gate": {"en": "Gate", "es": "Puerta", "fr": "Porte", "pt": "Portão", "ar": "بوابة", "hi": "द्वार"}
+}

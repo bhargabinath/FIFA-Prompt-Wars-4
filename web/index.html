@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MatchDay Ops — Live Stadium Console</title>
+<style>
+  /* ---- Theme tokens (light + dark), reduced-motion safe ---- */
+  :root {
+    --bg: #f4f6fb; --panel: #ffffff; --ink: #12182b; --muted: #5a6478;
+    --line: #e4e8f2; --accent: #1f7a4d; --accent-ink: #ffffff;
+    --calm: #2f9e5b; --busy: #d8a11a; --crowded: #e2711d; --critical: #d23b3b;
+    --shadow: 0 1px 2px rgba(16,24,43,.06), 0 8px 24px rgba(16,24,43,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1020; --panel: #141a2e; --ink: #eaeefb; --muted: #9aa4bd;
+      --line: #26304a; --accent: #4bd08a; --accent-ink: #06210f;
+      --calm: #3fbf74; --busy: #e6b83c; --crowded: #ef8a43; --critical: #f2635f;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1020; --panel: #141a2e; --ink: #eaeefb; --muted: #9aa4bd;
+    --line: #26304a; --accent: #4bd08a; --accent-ink: #06210f;
+    --calm: #3fbf74; --busy: #e6b83c; --crowded: #ef8a43; --critical: #f2635f;
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6fb; --panel: #ffffff; --ink: #12182b; --muted: #5a6478;
+    --line: #e4e8f2; --accent: #1f7a4d; --accent-ink: #ffffff;
+    --calm: #2f9e5b; --busy: #d8a11a; --crowded: #e2711d; --critical: #d23b3b;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 20px 18px 60px; }
+
+  header.top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .badge {
+    width: 42px; height: 42px; border-radius: 12px; flex: none;
+    background: radial-gradient(120% 120% at 30% 20%, var(--accent), #0d5a37);
+    color: var(--accent-ink); display: grid; place-items: center; font-weight: 800;
+    box-shadow: var(--shadow);
+  }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.2px; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .spacer { flex: 1; }
+  button.ghost {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 12px; cursor: pointer; font: inherit;
+  }
+  button.ghost:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+
+  .controls {
+    margin-top: 18px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 16px; padding: 16px; box-shadow: var(--shadow);
+    display: grid; gap: 16px; grid-template-columns: 1fr;
+  }
+  @media (min-width: 720px) { .controls { grid-template-columns: auto 1fr; align-items: center; } }
+
+  .seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; }
+  .seg button {
+    border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600;
+    padding: 8px 14px; border-radius: 9px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  .clock label { font-weight: 600; font-size: 13px; color: var(--muted); }
+  .clock .row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .chip { font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
+
+  .grid { margin-top: 18px; display: grid; gap: 18px; grid-template-columns: 1fr; }
+  @media (min-width: 860px) { .grid { grid-template-columns: 1.05fr .95fr; align-items: start; } }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 16px 18px; }
+  .card h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
+
+  .level { margin-bottom: 14px; }
+  .level h3 { font-size: 12px; color: var(--muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .08em; }
+  .zones { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .zone { border: 1px solid var(--line); border-radius: 12px; padding: 9px 10px; background: var(--bg); }
+  .zone .zn { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .zone .meter { height: 6px; border-radius: 999px; background: var(--line); margin: 7px 0 5px; overflow: hidden; }
+  .zone .fill { height: 100%; transition: width .35s ease; }
+  @media (prefers-reduced-motion: reduce) { .zone .fill, .zone { transition: none !important; } }
+  .zone .st { font-size: 11.5px; color: var(--muted); display: flex; justify-content: space-between; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .s-calm { background: var(--calm); } .s-busy { background: var(--busy); }
+  .s-crowded { background: var(--crowded); } .s-critical { background: var(--critical); }
+  .acc { font-size: 11px; color: var(--accent); font-weight: 700; }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+  .brief ul { list-style: none; padding: 0; margin: 0 0 10px; }
+  .brief li { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 7px; background: var(--bg); }
+  .brief li .tag { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; padding: 2px 7px; border-radius: 999px; margin-right: 8px; }
+  .tag-high { background: var(--critical); color: #fff; } .tag-med { background: var(--busy); color: #241a00; }
+  .tag-urgent { background: var(--critical); color:#fff;} .tag-advisory{ background: var(--busy); color:#241a00;}
+  .brief .why { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+  .brief h3 { font-size: 13px; margin: 14px 0 8px; }
+  .empty { color: var(--muted); font-style: italic; }
+
+  .router { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin-bottom: 10px; }
+  .router label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
+  .router select { width: 100%; padding: 7px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
+  .router .full { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+  .route-out { font-size: 13px; }
+  .route-out ol { margin: 6px 0 0; padding-left: 18px; }
+  .phrasebook { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 6px; }
+  .phrasebook div { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 6px 9px; font-size: 12.5px; }
+  .phrasebook b { display: block; font-size: 11px; color: var(--muted); font-weight: 600; }
+
+  .sources { margin-top: 18px; font-size: 12.5px; color: var(--muted); }
+  .sources a { color: var(--accent); }
+  footer { margin-top: 22px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="badge" aria-hidden="true">MD</div>
+      <div>
+        <h1>MatchDay Ops — Live Stadium Console</h1>
+        <div class="sub">Real-time crowd, navigation, accessibility &amp; egress · FIFA World Cup 2026 (representative host venue)</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="ghost" id="themeBtn" aria-label="Toggle light or dark theme">◐ Theme</button>
+  </header>
+
+  <section class="controls" aria-label="View controls">
+    <div class="seg" role="group" aria-label="Persona">
+      <button data-persona="staff" aria-pressed="true">Venue staff</button>
+      <button data-persona="volunteer" aria-pressed="false">Volunteer</button>
+      <button data-persona="fan" aria-pressed="false">Fan</button>
+    </div>
+    <div class="clock">
+      <label for="minute">Match minute — scrub the timeline</label>
+      <div class="row">
+        <input type="range" id="minute" min="-90" max="100" step="1" value="48" aria-describedby="phaseChip" />
+        <span class="chip" id="phaseChip">min 48 · Half-time</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-label="Live crowd map">
+      <h2>Live crowd map</h2>
+      <div id="map"></div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="dot s-calm"></i>Calm</span>
+        <span><i class="dot s-busy"></i>Busy</span>
+        <span><i class="dot s-crowded"></i>Crowded</span>
+        <span><i class="dot s-critical"></i>Critical</span>
+        <span>♿ = accessible</span>
+      </div>
+    </section>
+
+    <section class="card brief" aria-label="Assistant brief" aria-live="polite">
+      <h2 id="briefTitle">Operations brief</h2>
+      <div id="brief"></div>
+    </section>
+  </div>
+
+  <div class="sources card" style="margin-top:18px">
+    <h2>Sources</h2>
+    <div class="sources" id="sources"></div>
+  </div>
+
+  <footer>
+    Grounded demo of the MatchDay Ops offline engine, reimplemented in-browser (the Python package is the
+    canonical backend; with an Anthropic key it answers free-form questions in any language). Deterministic
+    crowd model — a simulation of live signals, not real telemetry. Original artwork; no FIFA trademarks.
+  </footer>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * Data — mirrors src/matchday_ops/data/*.json so the console matches
+ * the Python backend exactly.
+ * ------------------------------------------------------------------ */
+const ZONES = {
+  gate_a:{name:"Gate A",cat:"gate",lvl:"plaza",cap:6000,base:.40,acc:true},
+  gate_b:{name:"Gate B",cat:"gate",lvl:"plaza",cap:6000,base:.45,acc:false},
+  gate_c:{name:"Gate C (accessible)",cat:"gate",lvl:"plaza",cap:5000,base:.35,acc:true},
+  gate_d:{name:"Gate D",cat:"gate",lvl:"plaza",cap:6000,base:.50,acc:false},
+  plaza_north:{name:"North Plaza",cat:"plaza",lvl:"plaza",cap:10000,base:.40,acc:true},
+  transit_hub:{name:"Transit Hub",cat:"transit",lvl:"plaza",cap:8000,base:.45,acc:true},
+  rideshare_zone:{name:"Rideshare Pickup",cat:"transit",lvl:"plaza",cap:2000,base:.35,acc:false},
+  accessibility_services:{name:"Accessibility Services",cat:"accessibility",lvl:"plaza",cap:400,base:.30,acc:true},
+  lower_concourse_e:{name:"Lower Concourse East",cat:"concourse",lvl:"lower",cap:4000,base:.50,acc:true},
+  lower_concourse_w:{name:"Lower Concourse West",cat:"concourse",lvl:"lower",cap:4000,base:.45,acc:true},
+  upper_concourse_e:{name:"Upper Concourse East",cat:"concourse",lvl:"upper",cap:3500,base:.50,acc:true},
+  upper_concourse_w:{name:"Upper Concourse West",cat:"concourse",lvl:"upper",cap:3500,base:.45,acc:true},
+  sec_112:{name:"Section 112 (accessible)",cat:"seating",lvl:"lower",cap:1800,base:.60,acc:true},
+  sec_128:{name:"Section 128",cat:"seating",lvl:"lower",cap:2000,base:.60,acc:false},
+  sec_320:{name:"Section 320",cat:"seating",lvl:"upper",cap:2500,base:.60,acc:false},
+  family_area:{name:"Family Area",cat:"amenity",lvl:"lower",cap:800,base:.40,acc:true},
+  first_aid_main:{name:"Main First Aid",cat:"first_aid",lvl:"lower",cap:200,base:.20,acc:true},
+  elevator_core:{name:"Elevator Core",cat:"vertical",lvl:"lower",cap:150,base:.30,acc:true},
+  ramp_core:{name:"Accessible Ramp",cat:"vertical",lvl:"lower",cap:300,base:.30,acc:true},
+  stairs_core:{name:"Main Stairs",cat:"vertical",lvl:"lower",cap:600,base:.40,acc:false},
+};
+const LINKS = [
+  ["gate_a","plaza_north",3,1],["gate_b","plaza_north",3,1],["gate_c","plaza_north",3,1],["gate_d","plaza_north",3,1],
+  ["plaza_north","transit_hub",4,1],["plaza_north","rideshare_zone",5,1],["plaza_north","accessibility_services",2,1],
+  ["gate_a","lower_concourse_w",2,1],["gate_d","lower_concourse_w",2,1],["gate_b","lower_concourse_e",2,1],["gate_c","lower_concourse_e",2,1],
+  ["lower_concourse_e","lower_concourse_w",3,1],["lower_concourse_e","sec_112",2,1],["lower_concourse_e","sec_128",2,1],
+  ["lower_concourse_e","first_aid_main",2,1],["lower_concourse_w","family_area",2,1],
+  ["lower_concourse_e","stairs_core",1,0],["lower_concourse_w","elevator_core",1,1],["lower_concourse_w","ramp_core",2,1],
+  ["elevator_core","upper_concourse_w",1,1],["elevator_core","upper_concourse_e",2,1],["ramp_core","upper_concourse_w",3,1],
+  ["stairs_core","upper_concourse_e",1,0],["upper_concourse_e","upper_concourse_w",3,1],["upper_concourse_e","sec_320",2,1],
+];
+const TRANSIT = {
+  metro:{name:"Metro (Transit Hub)",base:6,egress:22,acc:true},
+  commuter_rail:{name:"Commuter rail",base:10,egress:18,acc:true},
+  bus:{name:"Shuttle bus",base:8,egress:15,acc:true},
+  rideshare:{name:"Rideshare pickup",base:12,egress:35,acc:false},
+};
+const INCIDENTS = [
+  {id:"inc_weather",zone:"plaza_north",sev:"advisory",win:[-90,-30],text:"Heat advisory during ingress. Hydration stations active on the North Plaza."},
+  {id:"inc_welfare",zone:"family_area",sev:"advisory",win:[20,75],text:"Unaccompanied minor reported near the Family Area."},
+  {id:"inc_medical",zone:"sec_128",sev:"urgent",win:[30,55],text:"Spectator medical assistance requested in Section 128."},
+];
+const PHRASES = {
+  Exit:{es:"Salida",fr:"Sortie",pt:"Saída",ar:"مخرج",hi:"निकास"},
+  "First aid":{es:"Primeros auxilios",fr:"Premiers secours",pt:"Primeiros socorros",ar:"إسعافات أولية",hi:"प्राथमिक चिकित्सा"},
+  "Accessible route":{es:"Ruta accesible",fr:"Itinéraire accessible",pt:"Rota acessível",ar:"مسار مُيسَّر",hi:"सुलभ मार्ग"},
+  Help:{es:"Ayuda",fr:"Aide",pt:"Ajuda",ar:"مساعدة",hi:"मदद"},
+};
+const SOURCES = [
+  ["Guide to Safety at Sports Grounds (SGSA)","https://sgsa.org.uk/green-guide/"],
+  ["NFPA 101 Life Safety Code — Egress","https://www.nfpa.org/codes-and-standards/nfpa-101-standard-development/101"],
+  ["ADA Standards — Accessible Assembly Areas","https://www.ada.gov/law-and-regs/design-standards/2010-stds/"],
+  ["FTA event transit guidance","https://www.transit.dot.gov/"],
+  ["FIFA World Cup 2026","https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026"],
+];
+const MULT = {
+  ingress:{gate:1.7,transit:1.6,plaza:1.5,concourse:1.2,seating:.4,amenity:.9,accessibility:1.3,first_aid:.6,vertical:1.2},
+  first_half:{gate:.2,transit:.3,plaza:.3,concourse:.4,seating:1.4,amenity:.6,accessibility:.7,first_aid:.9,vertical:.5},
+  halftime:{gate:.2,transit:.4,plaza:.5,concourse:1.8,seating:.6,amenity:1.7,accessibility:1.1,first_aid:1.1,vertical:1.6},
+  second_half:{gate:.2,transit:.4,plaza:.3,concourse:.5,seating:1.4,amenity:.7,accessibility:.7,first_aid:1.0,vertical:.6},
+  egress:{gate:1.8,transit:1.9,plaza:1.6,concourse:1.5,seating:.3,amenity:.8,accessibility:1.3,first_aid:.9,vertical:1.7},
+};
+const LEVELS = {plaza:"Plaza",lower:"Lower level",upper:"Upper level"};
+
+/* ---- Live model (mirrors telemetry.py / tools.py) ---- */
+function phase(m){ if(m<0)return["ingress","Pre-match ingress"]; if(m<45)return["first_half","First half"];
+  if(m<60)return["halftime","Half-time"]; if(m<90)return["second_half","Second half"]; return["egress","Full-time egress"]; }
+function statusOf(d){ return d>=90?"critical":d>=75?"crowded":d>=50?"busy":"calm"; }
+function waitOf(cat,d){ return Math.round(d/((cat==="gate"||cat==="transit"||cat==="plaza")?8:15)); }
+function reading(key,m){
+  const z=ZONES[key], ph=phase(m)[0], mult=(MULT[ph][z.cat]??1);
+  const d=Math.min(100,Math.round(z.base*mult*100));
+  return {key,name:z.name,cat:z.cat,lvl:z.lvl,acc:z.acc,density:d,wait:waitOf(z.cat,d),status:statusOf(d)};
+}
+function snapshot(m){ return Object.keys(ZONES).sort().map(k=>reading(k,m)); }
+function hotspots(m){ return snapshot(m).filter(r=>r.status==="crowded"||r.status==="critical").sort((a,b)=>b.density-a.density); }
+function incidents(m){
+  const out=INCIDENTS.filter(i=>m>=i.win[0]&&m<=i.win[1]).map(i=>({zone:ZONES[i.zone].name,sev:i.sev,text:i.text}));
+  hotspots(m).filter(r=>r.status==="critical").forEach(r=>out.push({zone:r.name,sev:"urgent",text:`${r.name} is critical (${r.density}% full, ~${r.wait} min wait).`}));
+  return out;
+}
+function egress(m,acc){
+  const ph=phase(m)[0];
+  let gates=snapshot(m).filter(r=>r.cat==="gate"&&(!acc||ZONES[r.key].acc));
+  if(!gates.length) gates=snapshot(m).filter(r=>r.cat==="gate");
+  const gate=gates.reduce((a,b)=>a.density<=b.density?a:b);
+  let opts=Object.entries(TRANSIT).filter(([,v])=>!acc||v.acc);
+  const w=v=>ph==="egress"?v.egress:v.base;
+  const best=opts.reduce((a,b)=>w(a[1])<=w(b[1])?a:b);
+  return {gate:gate.name,gstatus:gate.status,gdens:gate.density,mode:best[1].name,wait:w(best[1])};
+}
+function dispatch(m){
+  const items=hotspots(m).map(r=>({tag:r.status==="critical"?"high":"med",zone:r.name,
+    action:`Position stewards to meter flow at ${r.name}; open a secondary route.`,why:`${r.status} — ${r.density}% full, ~${r.wait} min wait.`}));
+  INCIDENTS.filter(i=>m>=i.win[0]&&m<=i.win[1]&&i.sev==="urgent").forEach(i=>items.push({tag:"high",zone:ZONES[i.zone].name,action:"Dispatch nearest first-aid team; keep a step-free path clear to Main First Aid.",why:i.text}));
+  return items.sort((a,b)=>(a.tag!=="high")-(b.tag!=="high"));
+}
+/* Dijkstra with an accessibility filter (mirrors tools.plan_route). */
+function route(from,to,acc){
+  if(from===to) return null;
+  const adj={}; Object.keys(ZONES).forEach(k=>adj[k]=[]);
+  LINKS.forEach(([a,b,w,sf])=>{ if(acc&&!sf)return; adj[a].push([b,w]); adj[b].push([a,w]); });
+  const dist={[from]:0}, prev={}, seen={};
+  while(true){
+    let u=null,du=Infinity;
+    for(const k in dist){ if(!seen[k]&&dist[k]<du){u=k;du=dist[k];} }
+    if(u===null) break;
+    if(u===to) break;
+    seen[u]=1;
+    for(const [v,w] of adj[u]){ const nd=du+w; if(nd<(dist[v]??Infinity)){dist[v]=nd;prev[v]=[u,w];} }
+  }
+  if(dist[to]===undefined) return {none:true};
+  const legs=[]; let n=to; while(n!==from){ const [p,w]=prev[n]; legs.unshift([ZONES[p].name,ZONES[n].name,w]); n=p; }
+  return {total:dist[to],legs};
+}
+
+/* ------------------------------------------------------------------ *
+ * UI
+ * ------------------------------------------------------------------ */
+let persona="staff", minute=48, routeFrom="gate_c", routeTo="sec_320", routeAcc=true;
+const $=s=>document.querySelector(s);
+
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function renderMap(){
+  const snap=snapshot(minute); const byLevel={plaza:[],lower:[],upper:[]};
+  snap.forEach(r=>byLevel[r.lvl].push(r));
+  let html="";
+  for(const lvl of ["plaza","lower","upper"]){
+    html+=`<div class="level"><h3>${LEVELS[lvl]}</h3><div class="zones">`;
+    for(const r of byLevel[lvl]){
+      html+=`<div class="zone"><div class="zn"><i class="dot s-${r.status}"></i>${esc(r.name)}${r.acc?' <span class="acc">♿</span>':""}</div>
+      <div class="meter"><div class="fill s-${r.status}" style="width:${r.density}%"></div></div>
+      <div class="st"><span>${r.density}% · ${r.status}</span><span>~${r.wait} min</span></div></div>`;
+    }
+    html+="</div></div>";
+  }
+  $("#map").innerHTML=html;
+}
+
+function li(tag,tagClass,title,why){
+  return `<li>${tag?`<span class="tag ${tagClass}">${tag}</span>`:""}${esc(title)}${why?`<div class="why">${esc(why)}</div>`:""}</li>`;
+}
+
+function renderBrief(){
+  const b=$("#brief"); const [,label]=phase(minute); let h="";
+  if(persona==="staff"){
+    $("#briefTitle").textContent="Operations brief";
+    const hs=hotspots(minute), inc=incidents(minute), eg=egress(minute,false), dp=dispatch(minute);
+    h+=`<h3>Crowd hotspots</h3><ul>`;
+    h+= hs.length? hs.map(r=>li(r.status.toUpperCase(),r.status==="critical"?"tag-high":"tag-med",`${r.name} — ${r.density}% full, ~${r.wait} min`,"")).join("")
+      : `<li class="empty">All zones calm/busy.</li>`;
+    h+=`</ul><h3>Active incidents</h3><ul>`;
+    h+= inc.length? inc.map(i=>li(i.sev.toUpperCase(),i.sev==="urgent"?"tag-urgent":"tag-advisory",`${i.zone}: ${i.text}`,"")).join("") : `<li class="empty">None active.</li>`;
+    h+=`</ul><h3>Egress readiness</h3><ul><li>${esc(eg.gate)} is the least-congested exit (${eg.gstatus}, ${eg.gdens}%). ${esc(eg.mode)} ~${eg.wait} min.</li></ul>`;
+    h+=`<h3>Recommended actions</h3><ul>`;
+    h+= dp.length? dp.map(d=>li(d.tag==="high"?"HIGH":"MED",d.tag==="high"?"tag-high":"tag-med",`${d.zone}: ${d.action}`,d.why)).join("") : `<li class="empty">No deployments needed.</li>`;
+    h+="</ul>";
+  } else if(persona==="volunteer"){
+    $("#briefTitle").textContent="Volunteer dispatch board";
+    const dp=dispatch(minute), inc=incidents(minute);
+    h+=`<h3>Act on HIGH first</h3><ul>`;
+    h+= dp.length? dp.map(d=>li(d.tag==="high"?"HIGH":"MED",d.tag==="high"?"tag-high":"tag-med",`${d.zone}: ${d.action}`,d.why)).join("") : `<li class="empty">Nothing urgent — help fans with wayfinding &amp; accessibility.</li>`;
+    h+=`</ul><h3>Active incidents</h3><ul>`;
+    h+= inc.length? inc.map(i=>li(i.sev.toUpperCase(),i.sev==="urgent"?"tag-urgent":"tag-advisory",`${i.zone}: ${i.text}`,"")).join("") : `<li class="empty">None active.</li>`;
+    h+="</ul>";
+  } else {
+    $("#briefTitle").textContent="Fan guide";
+    const busy=snapshot(minute).filter(r=>r.status==="crowded"||r.status==="critical").sort((a,b)=>b.density-a.density).slice(0,4);
+    const eg=egress(minute,false);
+    h+=`<h3>Busy right now — avoid if you can</h3><ul>`;
+    h+= busy.length? busy.map(r=>li(r.status.toUpperCase(),r.status==="critical"?"tag-high":"tag-med",`${r.name} (~${r.wait} min)`,"")).join("") : `<li class="empty">Nothing crowded — enjoy the match.</li>`;
+    h+=`</ul><h3>Getting out</h3><ul><li>${esc(eg.gate)} is quietest (${eg.gstatus}). ${esc(eg.mode)} ~${eg.wait} min. Step-free? Use Gate C + elevator core.</li></ul>`;
+    h+=`<h3>Plan a step-free route</h3>`;
+    h+=`<div class="router"><div><label for="rf">From</label><select id="rf"></select></div>
+      <div><label for="rt">To</label><select id="rt"></select></div>
+      <div class="full"><input type="checkbox" id="racc" ${routeAcc?"checked":""}/><label for="racc" style="margin:0">Step-free (accessible) only</label></div></div>
+      <div class="route-out" id="routeOut"></div>`;
+    h+=`<h3>Key phrases</h3><div class="phrasebook">`;
+    h+= Object.entries(PHRASES).map(([en,tr])=>`<div><b>${esc(en)}</b>${esc(tr.es)} · ${esc(tr.fr)} · ${esc(tr.hi)}</div>`).join("");
+    h+=`</div>`;
+  }
+  b.innerHTML=h;
+  if(persona==="fan") wireRouter();
+}
+
+function wireRouter(){
+  const rf=$("#rf"), rt=$("#rt");
+  const opts=Object.keys(ZONES).sort().map(k=>`<option value="${k}">${esc(ZONES[k].name)}</option>`).join("");
+  rf.innerHTML=opts; rt.innerHTML=opts; rf.value=routeFrom; rt.value=routeTo;
+  const run=()=>{ routeFrom=rf.value; routeTo=rt.value; routeAcc=$("#racc").checked; renderRoute(); };
+  rf.onchange=run; rt.onchange=run; $("#racc").onchange=run;
+  renderRoute();
+}
+function renderRoute(){
+  const out=$("#routeOut"); const r=route(routeFrom,routeTo,routeAcc);
+  if(!r){ out.innerHTML=`<span class="empty">Choose two different zones.</span>`; return; }
+  if(r.none){ out.innerHTML=`<span class="empty">No step-free route — ask a steward for assistance.</span>`; return; }
+  out.innerHTML=`<b>${r.total} min${routeAcc?" · step-free":""}</b><ol>`+r.legs.map(l=>`<li>${esc(l[0])} → ${esc(l[1])} (${l[2]} min)</li>`).join("")+`</ol>`;
+}
+
+function renderSources(){ $("#sources").innerHTML=SOURCES.map(([t,u])=>`<a href="${u}" target="_blank" rel="noopener">${esc(t)}</a>`).join(" · "); }
+
+function renderAll(){
+  const [,label]=phase(minute);
+  $("#phaseChip").textContent=`min ${minute} · ${label}`;
+  renderMap(); renderBrief();
+}
+
+/* ---- events ---- */
+document.querySelectorAll(".seg button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    persona=btn.dataset.persona;
+    document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed", b===btn?"true":"false"));
+    renderBrief();
+  });
+});
+$("#minute").addEventListener("input",e=>{ minute=parseInt(e.target.value,10); renderAll(); });
+$("#themeBtn").addEventListener("click",()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  const dark=cur? cur==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", dark?"light":"dark");
+});
+
+renderSources(); renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "description": "Authoritative sources every grounded fact can be traced to.",
+    "note": "Standards and bodies are real and public. Venue-specific SOPs are labelled 'representative' — they stand in for the operating stadium's own manual."
+  },
+  "fifa_2026": {
+    "title": "FIFA World Cup 2026 — Official",
+    "url": "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026"
+  },
+  "green_guide": {
+    "title": "Guide to Safety at Sports Grounds (SGSA) — crowd management",
+    "url": "https://sgsa.org.uk/green-guide/"
+  },
+  "nfpa_101": {
+    "title": "NFPA 101 Life Safety Code — Means of Egress",
+    "url": "https://www.nfpa.org/codes-and-standards/nfpa-101-standard-development/101"
+  },
+  "ada_guidance": {
+    "title": "ADA Standards for Accessible Design — Assembly Areas (§221, §206)",
+    "url": "https://www.ada.gov/law-and-regs/design-standards/2010-stds/"
+  },
+  "venue_ops_manual": {
+    "title": "Stadium Operations & Crowd Management SOP (representative venue)",
+    "url": "https://sgsa.org.uk/green-guide/"
+  },
+  "transit_authority": {
+    "title": "U.S. DOT Federal Transit Administration — event transit guidance",
+    "url": "https://www.transit.dot.gov/"
+  },
+  "fifa_sustainability": {
+    "title": "FIFA Sustainability",
+    "url": "https://www.fifa.com/en/what-we-do/sustainability"
+  }
+}

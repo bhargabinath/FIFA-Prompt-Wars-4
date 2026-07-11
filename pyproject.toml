@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matchday-ops"
+version = "1.0.0"
+description = "GenAI real-time stadium operations & experience assistant for the FIFA World Cup 2026"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Bhargabi Nath" }]
+keywords = ["fifa", "world-cup-2026", "genai", "stadium-operations", "crowd-management", "accessibility", "multilingual"]
+
+# The Anthropic SDK is an optional extra: the assistant runs offline
+# (deterministic, grounded briefings) without it, and uses Claude — the GenAI
+# reasoning core — when it is installed and ANTHROPIC_API_KEY is set.
+dependencies = []
+
+[project.optional-dependencies]
+llm = ["anthropic>=0.40.0"]
+dev = ["pytest>=7.4"]
+
+[project.scripts]
+matchday = "matchday_ops.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+matchday_ops = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "description": "Representative FIFA World Cup 2026 host venue. Original layout — no trademarks.",
+    "sources": ["fifa_2026", "green_guide"]
+  },
+  "id": "east_metro_stadium",
+  "name": "East Metro Stadium (representative host venue)",
+  "capacity": 82500,
+  "levels": ["plaza", "lower", "upper"],
+  "kickoff_local": "16:00",
+  "control_room": "Venue Operations Centre (VOC)",
+  "emergency_line": "stadium emergency channel / local emergency services"
+}
